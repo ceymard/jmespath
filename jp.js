@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-jmespath = require('./jmespath');
+import { search } from './jmespath.js';
 
 process.stdin.setEncoding('utf-8');
 

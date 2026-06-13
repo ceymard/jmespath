@@ -18,6 +18,7 @@
   },
   "dependencies": {},
   "main": "jmespath.js",
+  "type": "module",
   "directories": {
     "test": "test"
   },

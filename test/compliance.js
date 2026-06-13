@@ -1,8 +1,7 @@
-var fs = require('fs');
-var path = require('path');
-var assert = require('assert');
-var jmespath = require('../jmespath');
-var search = jmespath.search;
+import fs from 'fs';
+import path from 'path';
+import assert from 'assert';
+import { search } from '../jmespath.js';
 
 // Compliance tests that aren't supported yet.
 var notImplementedYet = [];

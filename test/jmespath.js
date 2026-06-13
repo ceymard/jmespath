@@ -1,8 +1,5 @@
-var assert = require('assert');
-var jmespath = require('../jmespath');
-var tokenize = jmespath.tokenize;
-var compile = jmespath.compile;
-var strictDeepEqual = jmespath.strictDeepEqual;
+import assert from 'assert';
+import { tokenize, compile, strictDeepEqual } from '../jmespath.js';
 
 
 describe('tokenize', function() {
