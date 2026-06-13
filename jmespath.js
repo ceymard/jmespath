@@ -835,10 +835,15 @@ class Parser {
     }
     keyName = keyToken.value;
     this._advance();
-    this._match(TOK_COLON);
-    value = this.expression(0);
-    node = {type: "KeyValuePair", name: keyName, value: value};
-    pairs.push(node);
+    if (this._lookahead(0) !== TOK_COLON) {
+      node = {type: "KeyValuePair", name: keyName, value: {type: "Field", name: keyName}};
+      pairs.push(node);
+    } else {
+      this._match(TOK_COLON);
+      value = this.expression(0);
+      node = {type: "KeyValuePair", name: keyName, value: value};
+      pairs.push(node);
+    }
     if (this._lookahead(0) === TOK_COMMA) {
       this._match(TOK_COMMA);
     } else if (this._lookahead(0) === TOK_RBRACE) {
@@ -1661,6 +1666,23 @@ function search(data, expression) {
     return interpreter.search(node, data);
 }
 
-
-export { Lexer, Parser, TreeInterpreter, Runtime };
-export { tokenize, compile, search, strictDeepEqual };
+export {
+  Lexer,
+  Parser,
+  TreeInterpreter,
+  Runtime,
+  tokenize,
+  compile,
+  search,
+  strictDeepEqual
+}
+export default {
+  Lexer,
+  Parser,
+  TreeInterpreter,
+  Runtime,
+  tokenize,
+  compile,
+  search,
+  strictDeepEqual
+}

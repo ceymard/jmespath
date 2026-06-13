@@ -354,9 +354,9 @@
         "error": "syntax"
       },
       {
-        "comment": "Not a key-value pair",
+        "comment": "Now allowed",
         "expression": "a.{foo}",
-        "error": "syntax"
+        "result": null
       },
       {
         "comment": "Missing value",
@@ -384,9 +384,9 @@
         "error": "syntax"
       },
       {
-        "comment": "Missing key in second key-value pair",
+        "comment": "Missing key means column of the same name (differs from spec)",
         "expression": "a.{foo: bar, baz}",
-        "error": "syntax"
+        "result": null
       },
       {
         "comment": "Missing value in second key-value pair",
