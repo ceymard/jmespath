@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { tokenize, compile, strictDeepEqual } from '../jmespath.js';
+import { tokenize, compile, strictDeepEqual, search } from '../jmespath.js';
 
 
 describe('tokenize', function() {
@@ -158,6 +158,31 @@ describe('tokenize', function() {
         );
     });
 
+    it('should tokenize unquoted identifiers with Unicode letters', function() {
+        assert.deepEqual(
+            tokenize('café'),
+            [{type: "UnquotedIdentifier", value: "café", start: 0}]
+        );
+    });
+
+    it('should tokenize unquoted identifiers with CJK characters', function() {
+        assert.deepEqual(
+            tokenize('变量'),
+            [{type: "UnquotedIdentifier", value: "变量", start: 0}]
+        );
+    });
+
+    it('should tokenize dotted lookups with Unicode identifiers', function() {
+        assert.deepEqual(
+            tokenize('über.schön'),
+            [
+                {type: "UnquotedIdentifier", value: "über", start: 0},
+                {type: "Dot", value: ".", start: 4},
+                {type: "UnquotedIdentifier", value: "schön", start: 5},
+            ]
+        );
+    });
+
 });
 
 
@@ -219,7 +244,7 @@ describe('search', function() {
         'should throw a readable error when invalid arguments are provided to a function',
         function() {
             try {
-                jmespath.search([], 'length(`null`)');
+                search([], 'length(`null`)');
             } catch (e) {
                 assert(e.message.search(
                     'expected argument 1 to be type string,array,object'
@@ -228,4 +253,54 @@ describe('search', function() {
             }
         }
     );
+
+    it('should resolve Unicode unquoted identifiers as field names', function() {
+        assert.strictEqual(search({café: 42}, 'café'), 42);
+        assert.strictEqual(search({变量: 'ok'}, '变量'), 'ok');
+        assert.strictEqual(search({über: {schön: 1}}, 'über.schön'), 1);
+    });
+
+    it('should group array elements by string key with group_by', function() {
+        var data = [
+            {type: 'fruit', name: 'apple'},
+            {type: 'fruit', name: 'banana'},
+            {type: 'veg', name: 'carrot'},
+        ];
+        assert.deepEqual(
+            search(data, 'group_by(@, &type)'),
+            {
+                fruit: [
+                    {type: 'fruit', name: 'apple'},
+                    {type: 'fruit', name: 'banana'},
+                ],
+                veg: [{type: 'veg', name: 'carrot'}],
+            }
+        );
+    });
+
+    it('should group array elements by numeric key with group_by', function() {
+        var data = [{k: 1}, {k: 2}, {k: 1}];
+        assert.deepEqual(
+            search(data, 'group_by(@, &k)'),
+            {
+                1: [{k: 1}, {k: 1}],
+                2: [{k: 2}],
+            }
+        );
+    });
+
+    it('should return an empty object for group_by on an empty array', function() {
+        assert.deepEqual(search([], 'group_by(@, &x)'), {});
+    });
+
+    it('should preserve element order within each group_by group', function() {
+        var data = [{g: 'a', i: 0}, {g: 'b', i: 1}, {g: 'a', i: 2}];
+        assert.deepEqual(
+            search(data, 'group_by(@, &g)'),
+            {
+                a: [{g: 'a', i: 0}, {g: 'a', i: 2}],
+                b: [{g: 'b', i: 1}],
+            }
+        );
+    });
 });

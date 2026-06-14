@@ -4,7 +4,7 @@ Licensed under the Apache License 2.0: http://www.apache.org/licenses/LICENSE-2.
 Modified by @ceymard for IQVIA
  - made it ESNext friendlier
  - added group_by
- - ...
+ - can now use Unicode identifiers instead of just ASCII
 */
 
 
