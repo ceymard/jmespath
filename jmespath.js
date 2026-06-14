@@ -1,3 +1,13 @@
+/*!
+This file includes code from jmespath.js
+Licensed under the Apache License 2.0: http://www.apache.org/licenses/LICENSE-2.0
+Modified by @ceymard for IQVIA
+ - made it ESNext friendlier
+ - added group_by
+ - ...
+*/
+
+
 function isArray(obj) {
   if (obj !== null) {
     return Object.prototype.toString.call(obj) === "[object Array]";
@@ -213,6 +223,24 @@ var skipChars = {
 };
 
 
+// Matches Unicode letters, Unicode combining marks, and underscore
+// This is what JS engines use for identifier starts
+function isIdentifierStart(ch) {
+  return /^[\p{L}\p{Nl}_$]$/u.test(ch);
+}
+
+// Identifier continuation also allows digits and Unicode combining/connector marks
+function isIdentifierPart(ch) {
+  return /^[\p{L}\p{Nl}\p{Nd}\p{Mn}\p{Mc}\p{Pc}_$]$/u.test(ch);
+}
+
+// Matches any Unicode decimal digit (not just 0-9)
+// Also note: removed "-" since that's not a digit — it's an operator
+function isDigit(ch) {
+  return /^\p{Nd}$/u.test(ch);
+}
+
+
 function isAlpha(ch) {
     return (ch >= "a" && ch <= "z") ||
            (ch >= "A" && ch <= "Z") ||
@@ -238,7 +266,7 @@ class Lexer {
     var identifier;
     var token;
     while (this._current < stream.length) {
-        if (isAlpha(stream[this._current])) {
+        if (isIdentifierStart(stream[this._current])) {
             start = this._current;
             identifier = this._consumeUnquotedIdentifier(stream);
             tokens.push({type: TOK_UNQUOTEDIDENTIFIER,
@@ -310,7 +338,7 @@ class Lexer {
   _consumeUnquotedIdentifier(stream) {
     var start = this._current;
     this._current++;
-    while (this._current < stream.length && isAlphaNum(stream[this._current])) {
+    while (this._current < stream.length && isIdentifierPart(stream[this._current])) {
         this._current++;
     }
     return stream.slice(start, this._current);
@@ -1182,6 +1210,7 @@ class Runtime {
       keys: {_func: this._functionKeys, _signature: [{types: [TYPE_OBJECT]}]},
       values: {_func: this._functionValues, _signature: [{types: [TYPE_OBJECT]}]},
       sort: {_func: this._functionSort, _signature: [{types: [TYPE_ARRAY_STRING, TYPE_ARRAY_NUMBER]}]},
+      group_by: {_func: this._functionGroupBy, _signature: [{types: [TYPE_ARRAY]}, {types: [TYPE_EXPREF]}]},
       "sort_by": {
         _func: this._functionSortBy,
         _signature: [{types: [TYPE_ARRAY]}, {types: [TYPE_EXPREF]}]
@@ -1536,6 +1565,19 @@ class Runtime {
     var sortedArray = resolvedArgs[0].slice(0);
     sortedArray.sort();
     return sortedArray;
+  }
+
+  _functionGroupBy(resolvedArgs) {
+    var exprefNode = resolvedArgs[1];
+    var array = resolvedArgs[0];
+    var keyFunction = this.createKeyFunction(exprefNode, [TYPE_NUMBER, TYPE_STRING]);
+    var groups = {};
+    for (var i = 0; i < array.length; i++) {
+      var key = keyFunction(array[i]);
+      const group = groups[key] ??= [];
+      group.push(array[i]);
+    }
+    return groups;
   }
 
   _functionSortBy(resolvedArgs) {
