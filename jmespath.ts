@@ -24,7 +24,7 @@ function isObject(obj: unknown): obj is Record<string, unknown> {
   }
 }
 
-function strictDeepEqual(first: unknown, second: any): boolean {
+export function strictDeepEqual(first: unknown, second: any): boolean {
   // Check the scalar case first.
   if (first === second) {
     return true;
@@ -658,7 +658,7 @@ type Exp =
   | { type: Node.ExpressionReference, children: [Exp] }
   | { type: Node.Pipe, children: [Exp, Exp] }
 
-class Parser {
+export class Parser {
 
   private index: number = 0;
   private tokens: Token[] = [];
@@ -994,7 +994,7 @@ class Parser {
   }
 
   _parseMultiselectHash(): Exp {
-    var pairs: Exp[] = [];
+    var pairs: KeyValuePair[] = [];
     var identifierTypes = [TOK.UNQUOTEDIDENTIFIER, TOK.QUOTEDIDENTIFIER];
     let keyToken, keyName, value, node: Exp;
     for (; ;) {
@@ -1026,7 +1026,7 @@ class Parser {
   }
 }
 
-class TreeInterpreter {
+export class TreeInterpreter {
 
   private runtime: Runtime;
 
@@ -1285,10 +1285,9 @@ class TreeInterpreter {
   }
 }
 
-class Runtime {
-  private _interpreter: TreeInterpreter;
-  constructor(interpreter: TreeInterpreter) {
-    this._interpreter = interpreter;
+export class Runtime {
+  public _interpreter!: TreeInterpreter;
+  constructor() {
     this.functionTable = {
       // name: [function, <signature>]
       // The <signature> can be:
@@ -1826,18 +1825,18 @@ class Runtime {
   }
 }
 
-function compile(stream) {
+export function compile(stream: string): Exp {
   var parser = new Parser();
   var ast = parser.parse(stream);
   return ast;
 }
 
-function tokenize(stream) {
+export function tokenize(stream: string): Token[] {
   var lexer = new Lexer();
   return lexer.tokenize(stream);
 }
 
-function search(data, expression) {
+export function search(data: unknown, expression: string): unknown {
   var parser = new Parser();
   // This needs to be improved.  Both the interpreter and runtime depend on
   // each other.  The runtime needs the interpreter to support exprefs.
@@ -1849,16 +1848,6 @@ function search(data, expression) {
   return interpreter.search(node, data);
 }
 
-export {
-  Lexer,
-  Parser,
-  TreeInterpreter,
-  Runtime,
-  tokenize,
-  compile,
-  search,
-  strictDeepEqual
-}
 export default {
   Lexer,
   Parser,
