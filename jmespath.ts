@@ -139,7 +139,7 @@ export const enum Type {
   ARRAY_STRING = 9,
 }
 
-const TYPENAME_TABLE = {
+const TYPE_NAME_TABLE = {
   [Type.NUMBER]: 'number',
   [Type.ANY]: 'any',
   [Type.STRING]: 'string',
@@ -153,81 +153,88 @@ const TYPENAME_TABLE = {
 };
 
 export function getTypeName(type: Type): string {
-  return TYPENAME_TABLE[type];
+  return TYPE_NAME_TABLE[type];
 }
 
-// const enum TOK {
-//   EOF = "EOF",
-//   UNQUOTEDIDENTIFIER = "UnquotedIdentifier",
-//   QUOTEDIDENTIFIER = "QuotedIdentifier",
-//   RBRACKET = "Rbracket",
-//   RPAREN = "Rparen",
-//   COMMA = "Comma",
-//   COLON = "Colon",
-//   RBRACE = "Rbrace",
-//   NUMBER = "Number",
-//   CURRENT = "Current",
-//   EXPREF = "Expref",
-//   PIPE = "Pipe",
-//   OR = "Or",
-//   AND = "And",
-//   EQ = "EQ",
-//   GT = "GT",
-//   LT = "LT",
-//   GTE = "GTE",
-//   LTE = "LTE",
-//   NE = "NE",
-//   FLATTEN = "Flatten",
-//   STAR = "Star",
-//   FILTER = "Filter",
-//   DOT = "Dot",
-//   NOT = "Not",
-//   LBRACE = "Lbrace",
-//   LBRACKET = "Lbracket",
-//   LPAREN= "Lparen",
-//   LITERAL= "Literal",
-//   }
+export const enum TOK {
+  EOF,
+  UNQUOTEDIDENTIFIER,
+  QUOTEDIDENTIFIER,
+  RBRACKET,
+  RPAREN,
+  COMMA,
+  COLON,
+  RBRACE,
+  NUMBER,
+  CURRENT,
+  EXPREF,
+  PIPE,
+  OR,
+  AND,
+  EQ,
+  GT,
+  LT,
+  GTE,
+  LTE,
+  NE,
+  FLATTEN,
+  STAR,
+  FILTER,
+  DOT,
+  NOT,
+  LBRACE,
+  LBRACKET,
+  LPAREN,
+  LITERAL,
+}
 
-const TOK_EOF = "EOF";
-const TOK_UNQUOTEDIDENTIFIER = "UnquotedIdentifier";
-const TOK_QUOTEDIDENTIFIER = "QuotedIdentifier";
-const TOK_RBRACKET = "Rbracket";
-const TOK_RPAREN = "Rparen";
-const TOK_COMMA = "Comma";
-const TOK_COLON = "Colon";
-const TOK_RBRACE = "Rbrace";
-const TOK_NUMBER = "Number";
-const TOK_CURRENT = "Current";
-const TOK_EXPREF = "Expref";
-const TOK_PIPE = "Pipe";
-const TOK_OR = "Or";
-const TOK_AND = "And";
-const TOK_EQ = "EQ";
-const TOK_GT = "GT";
-const TOK_LT = "LT";
-const TOK_GTE = "GTE";
-const TOK_LTE = "LTE";
-const TOK_NE = "NE";
-const TOK_FLATTEN = "Flatten";
-const TOK_STAR = "Star";
-const TOK_FILTER = "Filter";
-const TOK_DOT = "Dot";
-const TOK_NOT = "Not";
-const TOK_LBRACE = "Lbrace";
-const TOK_LBRACKET = "Lbracket";
-const TOK_LPAREN = "Lparen";
-const TOK_LITERAL = "Literal";
+export const TOKNAME_TABLE = {
+  [TOK.EOF]: "EOF",
+  [TOK.UNQUOTEDIDENTIFIER]: "UnquotedIdentifier",
+  [TOK.QUOTEDIDENTIFIER]: "QuotedIdentifier",
+  [TOK.RBRACKET]: "Rbracket",
+  [TOK.RPAREN]: "Rparen",
+  [TOK.COMMA]: "Comma",
+  [TOK.COLON]: "Colon",
+  [TOK.RBRACE]: "Rbrace",
+  [TOK.NUMBER]: "Number",
+  [TOK.CURRENT]: "Current",
+  [TOK.EXPREF]: "Expref",
+  [TOK.PIPE]: "Pipe",
+  [TOK.OR]: "Or",
+  [TOK.AND]: "And",
+  [TOK.EQ]: "EQ",
+  [TOK.GT]: "GT",
+  [TOK.LT]: "LT",
+  [TOK.GTE]: "GTE",
+  [TOK.LTE]: "LTE",
+  [TOK.NE]: "NE",
+  [TOK.FLATTEN]: "Flatten",
+  [TOK.STAR]: "Star",
+  [TOK.FILTER]: "Filter",
+  [TOK.DOT]: "Dot",
+  [TOK.NOT]: "Not",
+  [TOK.LBRACE]: "Lbrace",
+  [TOK.LBRACKET]: "Lbracket",
+  [TOK.LPAREN]: "Lparen",
+  [TOK.LITERAL]: "Literal",
+}
+
+export function getTokName(tok: TOK): string {
+  return TOKNAME_TABLE[tok];
+}
+
 
 type Token = {
-  type: string;
+  type: TOK;
   value: string;
   start: number;
 } | {
-  type: typeof TOK_NUMBER;
+  type: TOK.NUMBER;
   value: number;
   start: number;
 } | {
-  type: typeof TOK_LITERAL;
+  type: TOK.LITERAL;
   value: unknown;
   start: number;
 }
@@ -245,17 +252,17 @@ type Node = {
 // ("&&", "[?", "<=", ">=").  This is specially handled
 // below.
 
-const basicTokens: Record<string, string> = {
-  ".": TOK_DOT,
-  "*": TOK_STAR,
-  ",": TOK_COMMA,
-  ":": TOK_COLON,
-  "{": TOK_LBRACE,
-  "}": TOK_RBRACE,
-  "]": TOK_RBRACKET,
-  "(": TOK_LPAREN,
-  ")": TOK_RPAREN,
-  "@": TOK_CURRENT
+const basicTokens: Record<string, TOK> = {
+  ".": TOK.DOT,
+  "*": TOK.STAR,
+  ",": TOK.COMMA,
+  ":": TOK.COLON,
+  "{": TOK.LBRACE,
+  "}": TOK.RBRACE,
+  "]": TOK.RBRACKET,
+  "(": TOK.LPAREN,
+  ")": TOK.RPAREN,
+  "@": TOK.CURRENT
 };
 
 const operatorStartToken: Record<string, boolean> = {
@@ -303,7 +310,7 @@ class Lexer {
         start = this._current;
         identifier = this._consumeUnquotedIdentifier(stream);
         tokens.push({
-          type: TOK_UNQUOTEDIDENTIFIER,
+          type: TOK.UNQUOTEDIDENTIFIER,
           value: identifier,
           start: start
         });
@@ -326,7 +333,7 @@ class Lexer {
         start = this._current;
         identifier = this._consumeQuotedIdentifier(stream);
         tokens.push({
-          type: TOK_QUOTEDIDENTIFIER,
+          type: TOK.QUOTEDIDENTIFIER,
           value: identifier,
           start: start
         });
@@ -334,7 +341,7 @@ class Lexer {
         start = this._current;
         identifier = this._consumeRawStringLiteral(stream);
         tokens.push({
-          type: TOK_LITERAL,
+          type: TOK.LITERAL,
           value: identifier,
           start: start
         });
@@ -342,7 +349,7 @@ class Lexer {
         start = this._current;
         var literal = this._consumeLiteral(stream);
         tokens.push({
-          type: TOK_LITERAL,
+          type: TOK.LITERAL,
           value: literal,
           start: start
         });
@@ -357,9 +364,9 @@ class Lexer {
         const c = stream[this._current];
         if (c === "&") {
           this._current++;
-          tokens.push({ type: TOK_AND, value: "&&", start: start });
+          tokens.push({ type: TOK.AND, value: "&&", start: start });
         } else {
-          tokens.push({ type: TOK_EXPREF, value: "&", start: start });
+          tokens.push({ type: TOK.EXPREF, value: "&", start: start });
         }
       } else if (c === "|") {
         start = this._current;
@@ -367,9 +374,9 @@ class Lexer {
         const c = stream[this._current];
         if (c === "|") {
           this._current++;
-          tokens.push({ type: TOK_OR, value: "||", start: start });
+          tokens.push({ type: TOK.OR, value: "||", start: start });
         } else {
-          tokens.push({ type: TOK_PIPE, value: "|", start: start });
+          tokens.push({ type: TOK.PIPE, value: "|", start: start });
         }
       } else {
         var error = new Error("Unknown character:" + c);
@@ -436,7 +443,7 @@ class Lexer {
       this._current++;
     }
     var value = parseInt(stream.slice(start, this._current));
-    return { type: TOK_NUMBER, value: value, start: start };
+    return { type: TOK.NUMBER, value: value, start: start };
   }
 
   _consumeLBracket(stream: string): Token {
@@ -444,12 +451,12 @@ class Lexer {
     this._current++;
     if (stream[this._current] === "?") {
       this._current++;
-      return { type: TOK_FILTER, value: "[?", start: start };
+      return { type: TOK.FILTER, value: "[?", start: start };
     } else if (stream[this._current] === "]") {
       this._current++;
-      return { type: TOK_FLATTEN, value: "[]", start: start };
+      return { type: TOK.FLATTEN, value: "[]", start: start };
     } else {
-      return { type: TOK_LBRACKET, value: "[", start: start };
+      return { type: TOK.LBRACKET, value: "[", start: start };
     }
   }
 
@@ -460,28 +467,28 @@ class Lexer {
     if (startingChar === "!") {
       if (stream[this._current] === "=") {
         this._current++;
-        return { type: TOK_NE, value: "!=", start: start };
+        return { type: TOK.NE, value: "!=", start: start };
       } else {
-        return { type: TOK_NOT, value: "!", start: start };
+        return { type: TOK.NOT, value: "!", start: start };
       }
     } else if (startingChar === "<") {
       if (stream[this._current] === "=") {
         this._current++;
-        return { type: TOK_LTE, value: "<=", start: start };
+        return { type: TOK.LTE, value: "<=", start: start };
       } else {
-        return { type: TOK_LT, value: "<", start: start };
+        return { type: TOK.LT, value: "<", start: start };
       }
     } else if (startingChar === ">") {
       if (stream[this._current] === "=") {
         this._current++;
-        return { type: TOK_GTE, value: ">=", start: start };
+        return { type: TOK.GTE, value: ">=", start: start };
       } else {
-        return { type: TOK_GT, value: ">", start: start };
+        return { type: TOK.GT, value: ">", start: start };
       }
     } else if (startingChar === "=") {
       if (stream[this._current] === "=") {
         this._current++;
-        return { type: TOK_EQ, value: "==", start: start };
+        return { type: TOK.EQ, value: "==", start: start };
       }
     }
     var error = new Error("Unknown operator:" + startingChar);
@@ -544,33 +551,33 @@ class Lexer {
 }
 
 const bindingPower = {
-  [TOK_EOF]: 0,
-  [TOK_UNQUOTEDIDENTIFIER]: 0,
-  [TOK_QUOTEDIDENTIFIER]: 0,
-  [TOK_RBRACKET]: 0,
-  [TOK_RPAREN]: 0,
-  [TOK_COMMA]: 0,
-  [TOK_RBRACE]: 0,
-  [TOK_NUMBER]: 0,
-  [TOK_CURRENT]: 0,
-  [TOK_EXPREF]: 0,
-  [TOK_PIPE]: 1,
-  [TOK_OR]: 2,
-  [TOK_AND]: 3,
-  [TOK_EQ]: 5,
-  [TOK_GT]: 5,
-  [TOK_LT]: 5,
-  [TOK_GTE]: 5,
-  [TOK_LTE]: 5,
-  [TOK_NE]: 5,
-  [TOK_FLATTEN]: 9,
-  [TOK_STAR]: 20,
-  [TOK_FILTER]: 21,
-  [TOK_DOT]: 40,
-  [TOK_NOT]: 45,
-  [TOK_LBRACE]: 50,
-  [TOK_LBRACKET]: 55,
-  [TOK_LPAREN]: 60,
+  [TOK.EOF]: 0,
+  [TOK.UNQUOTEDIDENTIFIER]: 0,
+  [TOK.QUOTEDIDENTIFIER]: 0,
+  [TOK.RBRACKET]: 0,
+  [TOK.RPAREN]: 0,
+  [TOK.COMMA]: 0,
+  [TOK.RBRACE]: 0,
+  [TOK.NUMBER]: 0,
+  [TOK.CURRENT]: 0,
+  [TOK.EXPREF]: 0,
+  [TOK.PIPE]: 1,
+  [TOK.OR]: 2,
+  [TOK.AND]: 3,
+  [TOK.EQ]: 5,
+  [TOK.GT]: 5,
+  [TOK.LT]: 5,
+  [TOK.GTE]: 5,
+  [TOK.LTE]: 5,
+  [TOK.NE]: 5,
+  [TOK.FLATTEN]: 9,
+  [TOK.STAR]: 20,
+  [TOK.FILTER]: 21,
+  [TOK.DOT]: 40,
+  [TOK.NOT]: 45,
+  [TOK.LBRACE]: 50,
+  [TOK.LBRACKET]: 55,
+  [TOK.LPAREN]: 60,
 };
 
 class Parser {
@@ -582,7 +589,7 @@ class Parser {
     this._loadTokens(expression);
     this.index = 0;
     var ast = this.expression(0);
-    if (this._lookahead(0) !== TOK_EOF) {
+    if (this._lookahead(0) !== TOK.EOF) {
       var t = this._lookaheadToken(0);
       var error = new Error(
         "Unexpected token type: " + t.type + ", value: " + t.value);
@@ -595,7 +602,7 @@ class Parser {
   _loadTokens(expression: string): void {
     var lexer = new Lexer();
     var tokens = lexer.tokenize(expression);
-    tokens.push({ type: TOK_EOF, value: "", start: expression.length });
+    tokens.push({ type: TOK.EOF, value: "", start: expression.length });
     this.tokens = tokens;
   }
 
@@ -612,7 +619,7 @@ class Parser {
     return left;
   }
 
-  _lookahead(number: number): string {
+  _lookahead(number: number): TOK {
     return this.tokens[this.index + number].type;
   }
 
@@ -629,83 +636,83 @@ class Parser {
     var right;
     var expression;
     switch (token.type) {
-      // case TOK_NUMBER:
-      case TOK_LITERAL:
+      // case TOK.NUMBER:
+      case TOK.LITERAL:
         return { type: "Literal", value: token.value };
-      case TOK_UNQUOTEDIDENTIFIER:
+      case TOK.UNQUOTEDIDENTIFIER:
         return { type: "Field", name: token.value };
-      case TOK_QUOTEDIDENTIFIER:
+      case TOK.QUOTEDIDENTIFIER:
         var node = { type: "Field", name: token.value };
-        if (this._lookahead(0) === TOK_LPAREN) {
+        if (this._lookahead(0) === TOK.LPAREN) {
           throw new Error("Quoted identifier not allowed for function names.");
         }
         return node;
-      case TOK_NOT:
-        right = this.expression(bindingPower.Not);
+      case TOK.NOT:
+        right = this.expression(bindingPower[TOK.NOT]);
         return { type: "NotExpression", children: [right] };
-      case TOK_STAR:
+      case TOK.STAR:
         left = { type: "Identity" };
         right = null;
-        if (this._lookahead(0) === TOK_RBRACKET) {
+        if (this._lookahead(0) === TOK.RBRACKET) {
           // This can happen in a multiselect,
           // [a, b, *]
           right = { type: "Identity" };
         } else {
-          right = this._parseProjectionRHS(bindingPower.Star);
+          right = this._parseProjectionRHS(bindingPower[TOK.STAR]);
         }
         return { type: "ValueProjection", children: [left, right] };
-      case TOK_FILTER:
+      case TOK.FILTER:
         return this.led(token.type, { type: "Identity" });
-      case TOK_LBRACE:
+      case TOK.LBRACE:
         return this._parseMultiselectHash();
-      case TOK_FLATTEN:
-        left = { type: TOK_FLATTEN, children: [{ type: "Identity" }] };
-        right = this._parseProjectionRHS(bindingPower.Flatten);
+      case TOK.FLATTEN:
+        left = { type: TOK.FLATTEN, children: [{ type: "Identity" }] };
+        right = this._parseProjectionRHS(bindingPower[TOK.FLATTEN]);
         return { type: "Projection", children: [left, right] };
-      case TOK_LBRACKET:
-        if (this._lookahead(0) === TOK_NUMBER || this._lookahead(0) === TOK_COLON) {
+      case TOK.LBRACKET:
+        if (this._lookahead(0) === TOK.NUMBER || this._lookahead(0) === TOK.COLON) {
           right = this._parseIndexExpression();
           return this._projectIfSlice({ type: "Identity" }, right);
-        } else if (this._lookahead(0) === TOK_STAR &&
-          this._lookahead(1) === TOK_RBRACKET) {
+        } else if (this._lookahead(0) === TOK.STAR &&
+          this._lookahead(1) === TOK.RBRACKET) {
           this._advance();
           this._advance();
-          right = this._parseProjectionRHS(bindingPower.Star);
+          right = this._parseProjectionRHS(bindingPower[TOK.STAR]);
           return {
             type: "Projection",
             children: [{ type: "Identity" }, right]
           };
         }
         return this._parseMultiselectList();
-      case TOK_CURRENT:
-        return { type: TOK_CURRENT };
-      case TOK_EXPREF:
-        expression = this.expression(bindingPower.Expref);
+      case TOK.CURRENT:
+        return { type: TOK.CURRENT };
+      case TOK.EXPREF:
+        expression = this.expression(bindingPower[TOK.EXPREF]);
         return { type: "ExpressionReference", children: [expression] };
-      case TOK_LPAREN:
+      case TOK.LPAREN:
         var args = [];
-        while (this._lookahead(0) !== TOK_RPAREN) {
-          if (this._lookahead(0) === TOK_CURRENT) {
-            expression = { type: TOK_CURRENT };
+        while (this._lookahead(0) !== TOK.RPAREN) {
+          if (this._lookahead(0) === TOK.CURRENT) {
+            expression = { type: TOK.CURRENT };
             this._advance();
           } else {
             expression = this.expression(0);
           }
           args.push(expression);
         }
-        this._match(TOK_RPAREN);
+        this._match(TOK.RPAREN);
         return args[0];
       default:
         this._errorToken(token);
     }
   }
 
-  led(tokenName: string, left: unknown): unknown {
+  led(tokenType: TOK, left: unknown): unknown {
     var right;
-    switch (tokenName) {
-      case TOK_DOT:
-        var rbp = bindingPower.Dot;
-        if (this._lookahead(0) !== TOK_STAR) {
+    switch (tokenType) {
+      case TOK.DOT:
+        var rbp = bindingPower[TOK.DOT];
+        if (this._lookahead(0) !== TOK.STAR) {
           right = this._parseDotRHS(rbp);
           return { type: "Subexpression", children: [left, right] };
         }
@@ -713,75 +720,75 @@ class Parser {
         this._advance();
         right = this._parseProjectionRHS(rbp);
         return { type: "ValueProjection", children: [left, right] };
-      case TOK_PIPE:
-        right = this.expression(bindingPower.Pipe);
-        return { type: TOK_PIPE, children: [left, right] };
-      case TOK_OR:
-        right = this.expression(bindingPower.Or);
+      case TOK.PIPE:
+        right = this.expression(bindingPower[TOK.PIPE]);
+        return { type: TOK.PIPE, children: [left, right] };
+      case TOK.OR:
+        right = this.expression(bindingPower[TOK.OR]);
         return { type: "OrExpression", children: [left, right] };
-      case TOK_AND:
-        right = this.expression(bindingPower.And);
+      case TOK.AND:
+        right = this.expression(bindingPower[TOK.AND]);
         return { type: "AndExpression", children: [left, right] };
-      case TOK_LPAREN:
+      case TOK.LPAREN:
         var name = left.name;
         var args = [];
         var expression, node;
-        while (this._lookahead(0) !== TOK_RPAREN) {
-          if (this._lookahead(0) === TOK_CURRENT) {
-            expression = { type: TOK_CURRENT };
+        while (this._lookahead(0) !== TOK.RPAREN) {
+          if (this._lookahead(0) === TOK.CURRENT) {
+            expression = { type: TOK.CURRENT };
             this._advance();
           } else {
             expression = this.expression(0);
           }
-          if (this._lookahead(0) === TOK_COMMA) {
-            this._match(TOK_COMMA);
+          if (this._lookahead(0) === TOK.COMMA) {
+            this._match(TOK.COMMA);
           }
           args.push(expression);
         }
-        this._match(TOK_RPAREN);
+        this._match(TOK.RPAREN);
         node = { type: "Function", name: name, children: args };
         return node;
-      case TOK_FILTER:
+      case TOK.FILTER:
         var condition = this.expression(0);
-        this._match(TOK_RBRACKET);
-        if (this._lookahead(0) === TOK_FLATTEN) {
+        this._match(TOK.RBRACKET);
+        if (this._lookahead(0) === TOK.FLATTEN) {
           right = { type: "Identity" };
         } else {
-          right = this._parseProjectionRHS(bindingPower.Filter);
+          right = this._parseProjectionRHS(bindingPower[TOK.FILTER]);
         }
         return { type: "FilterProjection", children: [left, right, condition] };
-      case TOK_FLATTEN:
-        var leftNode = { type: TOK_FLATTEN, children: [left] };
-        var rightNode = this._parseProjectionRHS(bindingPower.Flatten);
+      case TOK.FLATTEN:
+        var leftNode = { type: TOK.FLATTEN, children: [left] };
+        var rightNode = this._parseProjectionRHS(bindingPower[TOK.FLATTEN]);
         return { type: "Projection", children: [leftNode, rightNode] };
-      case TOK_EQ:
-      case TOK_NE:
-      case TOK_GT:
-      case TOK_GTE:
-      case TOK_LT:
-      case TOK_LTE:
-        return this._parseComparator(left, tokenName);
-      case TOK_LBRACKET:
+      case TOK.EQ:
+      case TOK.NE:
+      case TOK.GT:
+      case TOK.GTE:
+      case TOK.LT:
+      case TOK.LTE:
+        return this._parseComparator(left, tokenType);
+      case TOK.LBRACKET:
         var token = this._lookaheadToken(0);
-        if (token.type === TOK_NUMBER || token.type === TOK_COLON) {
+        if (token.type === TOK.NUMBER || token.type === TOK.COLON) {
           right = this._parseIndexExpression();
           return this._projectIfSlice(left, right);
         }
-        this._match(TOK_STAR);
-        this._match(TOK_RBRACKET);
-        right = this._parseProjectionRHS(bindingPower.Star);
+        this._match(TOK.STAR);
+        this._match(TOK.RBRACKET);
+        right = this._parseProjectionRHS(bindingPower[TOK.STAR]);
         return { type: "Projection", children: [left, right] };
       default:
         this._errorToken(this._lookaheadToken(0));
     }
   }
 
-  _match(tokenType: string): void {
+  _match(tokenType: TOK): void {
     if (this._lookahead(0) === tokenType) {
       this._advance();
     } else {
       var t = this._lookaheadToken(0);
-      var error = new Error("Expected " + tokenType + ", got: " + t.type);
+      var error = new Error("Expected " + getTokName(tokenType) + ", got: " + getTokName(t.type));
       error.name = "ParserError";
       throw error;
     }
@@ -789,7 +796,7 @@ class Parser {
 
   _errorToken(token: Token): void {
     var error = new Error("Invalid token (" +
-      token.type + "): \"" +
+      getTokName(token.type) + "): \"" +
       token.value + "\"");
     error.name = "ParserError";
     throw error;
@@ -797,7 +804,7 @@ class Parser {
 
 
   _parseIndexExpression() {
-    if (this._lookahead(0) === TOK_COLON || this._lookahead(1) === TOK_COLON) {
+    if (this._lookahead(0) === TOK.COLON || this._lookahead(1) === TOK.COLON) {
       return this._parseSliceExpression();
     } else {
       var node = {
@@ -805,7 +812,7 @@ class Parser {
         value: this._lookaheadToken(0).value
       };
       this._advance();
-      this._match(TOK_RBRACKET);
+      this._match(TOK.RBRACKET);
       return node;
     }
   }
@@ -815,7 +822,7 @@ class Parser {
     if (right.type === "Slice") {
       return {
         type: "Projection",
-        children: [indexExpr, this._parseProjectionRHS(bindingPower.Star)]
+        children: [indexExpr, this._parseProjectionRHS(bindingPower[TOK.STAR])]
       };
     } else {
       return indexExpr;
@@ -828,11 +835,11 @@ class Parser {
     var parts = [null, null, null];
     var index = 0;
     var currentToken = this._lookahead(0);
-    while (currentToken !== TOK_RBRACKET && index < 3) {
-      if (currentToken === TOK_COLON) {
+    while (currentToken !== TOK.RBRACKET && index < 3) {
+      if (currentToken === TOK.COLON) {
         index++;
         this._advance();
-      } else if (currentToken === TOK_NUMBER) {
+      } else if (currentToken === TOK.NUMBER) {
         parts[index] = this._lookaheadToken(0).value;
         this._advance();
       } else {
@@ -844,7 +851,7 @@ class Parser {
       }
       currentToken = this._lookahead(0);
     }
-    this._match(TOK_RBRACKET);
+    this._match(TOK.RBRACKET);
     return {
       type: "Slice",
       children: parts
@@ -858,14 +865,14 @@ class Parser {
 
   _parseDotRHS(rbp) {
     var lookahead = this._lookahead(0);
-    var exprTokens = [TOK_UNQUOTEDIDENTIFIER, TOK_QUOTEDIDENTIFIER, TOK_STAR];
+    var exprTokens = [TOK.UNQUOTEDIDENTIFIER, TOK.QUOTEDIDENTIFIER, TOK.STAR];
     if (exprTokens.indexOf(lookahead) >= 0) {
       return this.expression(rbp);
-    } else if (lookahead === TOK_LBRACKET) {
-      this._match(TOK_LBRACKET);
+    } else if (lookahead === TOK.LBRACKET) {
+      this._match(TOK.LBRACKET);
       return this._parseMultiselectList();
-    } else if (lookahead === TOK_LBRACE) {
-      this._match(TOK_LBRACE);
+    } else if (lookahead === TOK.LBRACE) {
+      this._match(TOK.LBRACE);
       return this._parseMultiselectHash();
     }
   }
@@ -874,12 +881,12 @@ class Parser {
     var right;
     if (bindingPower[this._lookahead(0)] < 10) {
       right = { type: "Identity" };
-    } else if (this._lookahead(0) === TOK_LBRACKET) {
+    } else if (this._lookahead(0) === TOK.LBRACKET) {
       right = this.expression(rbp);
-    } else if (this._lookahead(0) === TOK_FILTER) {
+    } else if (this._lookahead(0) === TOK.FILTER) {
       right = this.expression(rbp);
-    } else if (this._lookahead(0) === TOK_DOT) {
-      this._match(TOK_DOT);
+    } else if (this._lookahead(0) === TOK.DOT) {
+      this._match(TOK.DOT);
       right = this._parseDotRHS(rbp);
     } else {
       var t = this._lookaheadToken(0);
@@ -893,23 +900,23 @@ class Parser {
 
   _parseMultiselectList() {
     var expressions = [];
-    while (this._lookahead(0) !== TOK_RBRACKET) {
+    while (this._lookahead(0) !== TOK.RBRACKET) {
       var expression = this.expression(0);
       expressions.push(expression);
-      if (this._lookahead(0) === TOK_COMMA) {
-        this._match(TOK_COMMA);
-        if (this._lookahead(0) === TOK_RBRACKET) {
+      if (this._lookahead(0) === TOK.COMMA) {
+        this._match(TOK.COMMA);
+        if (this._lookahead(0) === TOK.RBRACKET) {
           throw new Error("Unexpected token Rbracket");
         }
       }
     }
-    this._match(TOK_RBRACKET);
+    this._match(TOK.RBRACKET);
     return { type: "MultiSelectList", children: expressions };
   }
 
   _parseMultiselectHash() {
     var pairs = [];
-    var identifierTypes = [TOK_UNQUOTEDIDENTIFIER, TOK_QUOTEDIDENTIFIER];
+    var identifierTypes = [TOK.UNQUOTEDIDENTIFIER, TOK.QUOTEDIDENTIFIER];
     var keyToken, keyName, value, node;
     for (; ;) {
       keyToken = this._lookaheadToken(0);
@@ -919,19 +926,19 @@ class Parser {
       }
       keyName = keyToken.value;
       this._advance();
-      if (this._lookahead(0) !== TOK_COLON) {
+      if (this._lookahead(0) !== TOK.COLON) {
         node = { type: "KeyValuePair", name: keyName, value: { type: "Field", name: keyName } };
         pairs.push(node);
       } else {
-        this._match(TOK_COLON);
+        this._match(TOK.COLON);
         value = this.expression(0);
         node = { type: "KeyValuePair", name: keyName, value: value };
         pairs.push(node);
       }
-      if (this._lookahead(0) === TOK_COMMA) {
-        this._match(TOK_COMMA);
-      } else if (this._lookahead(0) === TOK_RBRACE) {
-        this._match(TOK_RBRACE);
+      if (this._lookahead(0) === TOK.COMMA) {
+        this._match(TOK.COMMA);
+      } else if (this._lookahead(0) === TOK.RBRACE) {
+        this._match(TOK.RBRACE);
         break;
       }
     }
@@ -1062,29 +1069,29 @@ class TreeInterpreter {
         first = this.visit(node.children[0], value);
         second = this.visit(node.children[1], value);
         switch (node.name) {
-          case TOK_EQ:
+          case TOK.EQ:
             result = strictDeepEqual(first, second);
             break;
-          case TOK_NE:
+          case TOK.NE:
             result = !strictDeepEqual(first, second);
             break;
-          case TOK_GT:
+          case TOK.GT:
             result = first > second;
             break;
-          case TOK_GTE:
+          case TOK.GTE:
             result = first >= second;
             break;
-          case TOK_LT:
+          case TOK.LT:
             result = first < second;
             break;
-          case TOK_LTE:
+          case TOK.LTE:
             result = first <= second;
             break;
           default:
             throw new Error("Unknown comparator: " + node.name);
         }
         return result;
-      case TOK_FLATTEN:
+      case TOK.FLATTEN:
         var original = this.visit(node.children[0], value);
         if (!isArray(original)) {
           return null;
@@ -1139,10 +1146,10 @@ class TreeInterpreter {
         return isFalsy(first);
       case "Literal":
         return node.value;
-      case TOK_PIPE:
+      case TOK.PIPE:
         left = this.visit(node.children[0], value);
         return this.visit(node.children[1], left);
-      case TOK_CURRENT:
+      case TOK.CURRENT:
         return value;
       case "Function":
         var resolvedArgs = [];
@@ -1154,7 +1161,7 @@ class TreeInterpreter {
         var refNode = node.children[0];
         // Tag the node with a specific attribute so the type
         // checker verify the type.
-        refNode.jmespathType = TOK_EXPREF;
+        refNode.jmespathType = TOK.EXPREF;
         return refNode;
       default:
         throw new Error("Unknown node type: " + node.type);
@@ -1345,14 +1352,14 @@ class Runtime {
       if (!typeMatched) {
         var expected = currentSpec
           .map(function (typeIdentifier) {
-            return TYPENAME_TABLE[typeIdentifier];
+            return TYPE_NAME_TABLE[typeIdentifier];
           })
           .join(',');
         throw new Error("TypeError: " + name + "() " +
           "expected argument " + (i + 1) +
           " to be type " + expected +
           " but received type " +
-          TYPENAME_TABLE[actualType] + " instead.");
+          TYPE_NAME_TABLE[actualType] + " instead.");
       }
     }
   }
@@ -1407,7 +1414,7 @@ class Runtime {
       case "[object Object]":
         // Check if it's an expref.  If it has, it's been
         // tagged with a jmespathType attr of 'Expref';
-        if (obj.jmespathType === TOK_EXPREF) {
+        if (obj.jmespathType === TOK.EXPREF) {
           return Type.EXPREF;
         } else {
           return Type.OBJECT;

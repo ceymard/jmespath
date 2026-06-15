@@ -1,148 +1,148 @@
 import assert from 'assert';
-import { tokenize, compile, strictDeepEqual, search } from '../jmespath.ts';
+import { tokenize, compile, strictDeepEqual, search, TOK } from '../jmespath.ts';
 
 
 describe('tokenize', function() {
     it('should tokenize unquoted identifier', function() {
         assert.deepEqual(tokenize('foo'),
-                         [{type: "UnquotedIdentifier",
+                         [{type: TOK.UNQUOTEDIDENTIFIER,
                           value: "foo",
                           start: 0}]);
     });
     it('should tokenize unquoted identifier with underscore', function() {
         assert.deepEqual(tokenize('_underscore'),
-                          [{type: "UnquotedIdentifier",
+                          [{type: TOK.UNQUOTEDIDENTIFIER,
                            value: "_underscore",
                            start: 0}]);
     });
     it('should tokenize unquoted identifier with numbers', function() {
         assert.deepEqual(tokenize('foo123'),
-                          [{type: "UnquotedIdentifier",
+                          [{type: TOK.UNQUOTEDIDENTIFIER,
                            value: "foo123",
                            start: 0}]);
     });
     it('should tokenize dotted lookups', function() {
         assert.deepEqual(
             tokenize('foo.bar'),
-            [{type: "UnquotedIdentifier", value: "foo", start: 0},
-             {type: "Dot", value: ".", start: 3},
-             {type: "UnquotedIdentifier", value: "bar", start: 4},
+            [{type: TOK.UNQUOTEDIDENTIFIER, value: "foo", start: 0},
+             {type: TOK.DOT, value: ".", start: 3},
+             {type: TOK.UNQUOTEDIDENTIFIER, value: "bar", start: 4},
             ]);
     });
     it('should tokenize numbers', function() {
         assert.deepEqual(
             tokenize('foo[0]'),
-            [{type: "UnquotedIdentifier", value: "foo", start: 0},
-             {type: "Lbracket", value: "[", start: 3},
-             {type: "Number", value: 0, start: 4},
-             {type: "Rbracket", value: "]", start: 5},
+            [{type: TOK.UNQUOTEDIDENTIFIER, value: "foo", start: 0},
+             {type: TOK.LBRACKET, value: "[", start: 3},
+             {type: TOK.NUMBER, value: 0, start: 4},
+             {type: TOK.RBRACKET, value: "]", start: 5},
             ]);
     });
     it('should tokenize numbers with multiple digits', function() {
         assert.deepEqual(
             tokenize("12345"),
-            [{type: "Number", value: 12345, start: 0}]);
+            [{type: TOK.NUMBER, value: 12345, start: 0}]);
     });
     it('should tokenize negative numbers', function() {
         assert.deepEqual(
             tokenize("-12345"),
-            [{type: "Number", value: -12345, start: 0}]);
+            [{type: TOK.NUMBER, value: -12345, start: 0}]);
     });
     it('should tokenize quoted identifier', function() {
         assert.deepEqual(tokenize('"foo"'),
-                         [{type: "QuotedIdentifier",
+                         [{type: TOK.QUOTEDIDENTIFIER,
                           value: "foo",
                           start: 0}]);
     });
     it('should tokenize quoted identifier with unicode escape', function() {
         assert.deepEqual(tokenize('"\\u2713"'),
-                         [{type: "QuotedIdentifier",
+                         [{type: TOK.QUOTEDIDENTIFIER,
                           value: "✓",
                           start: 0}]);
     });
     it('should tokenize literal lists', function() {
         assert.deepEqual(tokenize("`[0, 1]`"),
-                         [{type: "Literal",
+                         [{type: TOK.LITERAL,
                           value: [0, 1],
                           start: 0}]);
     });
     it('should tokenize literal dict', function() {
         assert.deepEqual(tokenize("`{\"foo\": \"bar\"}`"),
-                         [{type: "Literal",
+                         [{type: TOK.LITERAL,
                           value: {"foo": "bar"},
                           start: 0}]);
     });
     it('should tokenize literal strings', function() {
         assert.deepEqual(tokenize("`\"foo\"`"),
-                         [{type: "Literal",
+                         [{type: TOK.LITERAL,
                           value: "foo",
                           start: 0}]);
     });
     it('should tokenize json literals', function() {
         assert.deepEqual(tokenize("`true`"),
-                         [{type: "Literal",
+                         [{type: TOK.LITERAL,
                           value: true,
                           start: 0}]);
     });
     it('should not requiring surrounding quotes for strings', function() {
         assert.deepEqual(tokenize("`foo`"),
-                         [{type: "Literal",
+                         [{type: TOK.LITERAL,
                           value: "foo",
                           start: 0}]);
     });
     it('should not requiring surrounding quotes for numbers', function() {
         assert.deepEqual(tokenize("`20`"),
-                         [{type: "Literal",
+                         [{type: TOK.LITERAL,
                            value: 20,
                            start: 0}]);
     });
     it('should tokenize literal lists with chars afterwards', function() {
         assert.deepEqual(
             tokenize("`[0, 1]`[0]"), [
-                {type: "Literal", value: [0, 1], start: 0},
-                {type: "Lbracket", value: "[", start: 8},
-                {type: "Number", value: 0, start: 9},
-                {type: "Rbracket", value: "]", start: 10}
+                {type: TOK.LITERAL, value: [0, 1], start: 0},
+                {type: TOK.LBRACKET, value: "[", start: 8},
+                {type: TOK.NUMBER, value: 0, start: 9},
+                {type: TOK.RBRACKET, value: "]", start: 10}
         ]);
     });
     it('should tokenize two char tokens with shared prefix', function() {
         assert.deepEqual(
             tokenize("[?foo]"),
-            [{type: "Filter", value: "[?", start: 0},
-             {type: "UnquotedIdentifier", value: "foo", start: 2},
-             {type: "Rbracket", value: "]", start: 5}]
+            [{type: TOK.FILTER, value: "[?", start: 0},
+             {type: TOK.UNQUOTEDIDENTIFIER, value: "foo", start: 2},
+             {type: TOK.RBRACKET, value: "]", start: 5}]
         );
     });
     it('should tokenize flatten operator', function() {
         assert.deepEqual(
             tokenize("[]"),
-            [{type: "Flatten", value: "[]", start: 0}]);
+            [{type: TOK.FLATTEN, value: "[]", start: 0}]);
     });
     it('should tokenize comparators', function() {
         assert.deepEqual(tokenize("<"),
-                         [{type: "LT",
+                         [{type: TOK.LT,
                           value: "<",
                           start: 0}]);
     });
     it('should tokenize two char tokens without shared prefix', function() {
         assert.deepEqual(
             tokenize("=="),
-            [{type: "EQ", value: "==", start: 0}]
+            [{type: TOK.EQ, value: "==", start: 0}]
         );
     });
     it('should tokenize not equals', function() {
         assert.deepEqual(
             tokenize("!="),
-            [{type: "NE", value: "!=", start: 0}]
+            [{type: TOK.NE, value: "!=", start: 0}]
         );
     });
     it('should tokenize the OR token', function() {
         assert.deepEqual(
             tokenize("a||b"),
             [
-                {type: "UnquotedIdentifier", value: "a", start: 0},
-                {type: "Or", value: "||", start: 1},
-                {type: "UnquotedIdentifier", value: "b", start: 3}
+                {type: TOK.UNQUOTEDIDENTIFIER, value: "a", start: 0},
+                {type: TOK.OR, value: "||", start: 1},
+                {type: TOK.UNQUOTEDIDENTIFIER, value: "b", start: 3}
             ]
         );
     });
@@ -150,10 +150,10 @@ describe('tokenize', function() {
         assert.deepEqual(
             tokenize("abs(@)"),
             [
-                {type: "UnquotedIdentifier", value: "abs", start: 0},
-                {type: "Lparen", value: "(", start: 3},
-                {type: "Current", value: "@", start: 4},
-                {type: "Rparen", value: ")", start: 5}
+                {type: TOK.UNQUOTEDIDENTIFIER, value: "abs", start: 0},
+                {type: TOK.LPAREN, value: "(", start: 3},
+                {type: TOK.CURRENT, value: "@", start: 4},
+                {type: TOK.RPAREN, value: ")", start: 5}
             ]
         );
     });
@@ -161,14 +161,14 @@ describe('tokenize', function() {
     it('should tokenize unquoted identifiers with Unicode letters', function() {
         assert.deepEqual(
             tokenize('café'),
-            [{type: "UnquotedIdentifier", value: "café", start: 0}]
+            [{type: TOK.UNQUOTEDIDENTIFIER, value: "café", start: 0}]
         );
     });
 
     it('should tokenize unquoted identifiers with CJK characters', function() {
         assert.deepEqual(
             tokenize('变量'),
-            [{type: "UnquotedIdentifier", value: "变量", start: 0}]
+            [{type: TOK.UNQUOTEDIDENTIFIER, value: "变量", start: 0}]
         );
     });
 
@@ -176,9 +176,9 @@ describe('tokenize', function() {
         assert.deepEqual(
             tokenize('über.schön'),
             [
-                {type: "UnquotedIdentifier", value: "über", start: 0},
-                {type: "Dot", value: ".", start: 4},
-                {type: "UnquotedIdentifier", value: "schön", start: 5},
+                {type: TOK.UNQUOTEDIDENTIFIER, value: "über", start: 0},
+                {type: TOK.DOT, value: ".", start: 4},
+                {type: TOK.UNQUOTEDIDENTIFIER, value: "schön", start: 5},
             ]
         );
     });
