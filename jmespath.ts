@@ -139,7 +139,7 @@ export const enum Type {
   ARRAY_STRING = 9,
 }
 
-const TYPE_NAME_TABLE = {
+const TYPE_NAME_TABLE: Record<Type, string> = {
   [Type.NUMBER]: 'number',
   [Type.ANY]: 'any',
   [Type.STRING]: 'string',
@@ -237,13 +237,6 @@ type Token = {
   type: TOK.LITERAL;
   value: unknown;
   start: number;
-}
-
-type Node = {
-  type: string;
-} | {
-  type: "Literal";
-  value: unknown;
 }
 
 // The "&", "[", "<", ">" tokens
@@ -550,7 +543,7 @@ class Lexer {
   }
 }
 
-const bindingPower = {
+const bindingPower: Record<TOK, number> = {
   [TOK.EOF]: 0,
   [TOK.UNQUOTEDIDENTIFIER]: 0,
   [TOK.QUOTEDIDENTIFIER]: 0,
@@ -578,14 +571,99 @@ const bindingPower = {
   [TOK.LBRACE]: 50,
   [TOK.LBRACKET]: 55,
   [TOK.LPAREN]: 60,
+
+  [TOK.LITERAL]: 999999,
+  [TOK.COLON]: 999999,
 };
+
+const enum Node {
+  Invalid,
+  Comparator,
+  Literal,
+  Field,
+  NotExpression,
+  Identity,
+  ValueProjection,
+  FilterProjection,
+  Projection,
+  Index,
+  IndexExpression,
+  Subexpression,
+  OrExpression,
+  AndExpression,
+  Function,
+  KeyValuePair,
+  MultiSelectHash,
+  MultiSelectList,
+  Flatten,
+  Slice,
+  Current,
+  ExpressionReference,
+  Pipe,
+}
+
+const NODE_NAME_TABLE: Record<Node, string> = {
+  [Node.Literal]: "Literal",
+  [Node.Field]: "Field",
+  [Node.NotExpression]: "NotExpression",
+  [Node.Identity]: "Identity",
+  [Node.ValueProjection]: "ValueProjection",
+  [Node.FilterProjection]: "FilterProjection",
+  [Node.Projection]: "Projection",
+  [Node.Index]: "Index",
+  [Node.IndexExpression]: "IndexExpression",
+  [Node.Subexpression]: "Subexpression",
+  [Node.OrExpression]: "OrExpression",
+  [Node.AndExpression]: "AndExpression",
+  [Node.Function]: "Function",
+  [Node.Invalid]: "Invalid",
+  [Node.KeyValuePair]: "KeyValuePair",
+  [Node.MultiSelectHash]: "MultiSelectHash",
+  [Node.MultiSelectList]: "MultiSelectList",
+  [Node.Flatten]: "Flatten",
+  [Node.Slice]: "Slice",
+  [Node.Comparator]: "Comparator",
+  [Node.Current]: "Current",
+  [Node.ExpressionReference]: "ExpressionReference",
+  [Node.Pipe]: "Pipe",
+}
+
+function getNodeName(node: Node): string {
+  return NODE_NAME_TABLE[node];
+}
+
+type KeyValuePair = { type: Node.KeyValuePair, name: string, value: Exp };
+
+type Exp =
+  | { type: Node.Literal, value: unknown }
+  | { type: Node.Field, name: string }
+  | { type: Node.NotExpression, children: Exp[] }
+  | { type: Node.Identity }
+  | { type: Node.ValueProjection, children: [Exp, Exp] }
+  | { type: Node.FilterProjection, children: [Exp, Exp, Exp] }
+  | { type: Node.Projection, children: [Exp, Exp] }
+  | { type: Node.Index, value: number }
+  | { type: Node.IndexExpression, children: [Exp, Exp] }
+  | { type: Node.Subexpression, children: [Exp, Exp] }
+  | { type: Node.OrExpression, children: [Exp, Exp] }
+  | { type: Node.AndExpression, children: [Exp, Exp] }
+  | { type: Node.Function, name: string, children: Exp[] }
+  | KeyValuePair
+  | { type: Node.MultiSelectHash, children: KeyValuePair[] }
+  | { type: Node.MultiSelectList, children: Exp[] }
+  | { type: Node.Flatten, children: [Exp] }
+  | { type: Node.Slice, children: [number | null, number | null, number | null] }
+  | { type: Node.Current }
+  | { type: Node.Comparator, name: TOK, children: [Exp, Exp] }
+  | { type: Node.ExpressionReference, children: [Exp] }
+  | { type: Node.Pipe, children: [Exp, Exp] }
 
 class Parser {
 
   private index: number = 0;
   private tokens: Token[] = [];
 
-  parse(expression: string): unknown {
+  parse(expression: string): Exp {
     this._loadTokens(expression);
     this.index = 0;
     var ast = this.expression(0);
@@ -606,7 +684,7 @@ class Parser {
     this.tokens = tokens;
   }
 
-  expression(rbp: number): unknown {
+  expression(rbp: number): Exp {
     var leftToken = this._lookaheadToken(0);
     this._advance();
     var left = this.nud(leftToken);
@@ -631,69 +709,69 @@ class Parser {
     this.index++;
   }
 
-  nud(token: Token): unknown {
-    var left;
-    var right;
-    var expression;
+  nud(token: Token): Exp {
+    let left: Exp;
+    let right: Exp | null = null;
+    let expression: Exp;
     switch (token.type) {
       // case TOK.NUMBER:
       case TOK.LITERAL:
-        return { type: "Literal", value: token.value };
+        return { type: Node.Literal, value: token.value };
       case TOK.UNQUOTEDIDENTIFIER:
-        return { type: "Field", name: token.value };
+        return { type: Node.Field, name: token.value };
       case TOK.QUOTEDIDENTIFIER:
-        var node = { type: "Field", name: token.value };
+        var node: Exp = { type: Node.Field, name: token.value };
         if (this._lookahead(0) === TOK.LPAREN) {
           throw new Error("Quoted identifier not allowed for function names.");
         }
         return node;
       case TOK.NOT:
         right = this.expression(bindingPower[TOK.NOT]);
-        return { type: "NotExpression", children: [right] };
+        return { type: Node.NotExpression, children: [right] };
       case TOK.STAR:
-        left = { type: "Identity" };
+        left = { type: Node.Identity };
         right = null;
         if (this._lookahead(0) === TOK.RBRACKET) {
           // This can happen in a multiselect,
           // [a, b, *]
-          right = { type: "Identity" };
+          right = { type: Node.Identity };
         } else {
           right = this._parseProjectionRHS(bindingPower[TOK.STAR]);
         }
-        return { type: "ValueProjection", children: [left, right] };
+        return { type: Node.ValueProjection, children: [left, right] };
       case TOK.FILTER:
-        return this.led(token.type, { type: "Identity" });
+        return this.led(token.type, { type: Node.Identity });
       case TOK.LBRACE:
         return this._parseMultiselectHash();
       case TOK.FLATTEN:
-        left = { type: TOK.FLATTEN, children: [{ type: "Identity" }] };
+        left = { type: Node.Flatten, children: [{ type: Node.Identity }] };
         right = this._parseProjectionRHS(bindingPower[TOK.FLATTEN]);
-        return { type: "Projection", children: [left, right] };
+        return { type: Node.Projection, children: [left, right] };
       case TOK.LBRACKET:
         if (this._lookahead(0) === TOK.NUMBER || this._lookahead(0) === TOK.COLON) {
           right = this._parseIndexExpression();
-          return this._projectIfSlice({ type: "Identity" }, right);
+          return this._projectIfSlice({ type: Node.Identity }, right);
         } else if (this._lookahead(0) === TOK.STAR &&
           this._lookahead(1) === TOK.RBRACKET) {
           this._advance();
           this._advance();
           right = this._parseProjectionRHS(bindingPower[TOK.STAR]);
           return {
-            type: "Projection",
-            children: [{ type: "Identity" }, right]
+            type: Node.Projection,
+            children: [{ type: Node.Identity }, right]
           };
         }
         return this._parseMultiselectList();
       case TOK.CURRENT:
-        return { type: TOK.CURRENT };
+        return { type: Node.Current };
       case TOK.EXPREF:
         expression = this.expression(bindingPower[TOK.EXPREF]);
-        return { type: "ExpressionReference", children: [expression] };
+        return { type: Node.ExpressionReference, children: [expression] };
       case TOK.LPAREN:
-        var args = [];
+        var args: Exp[] = [];
         while (this._lookahead(0) !== TOK.RPAREN) {
           if (this._lookahead(0) === TOK.CURRENT) {
-            expression = { type: TOK.CURRENT };
+            expression = { type: Node.Current };
             this._advance();
           } else {
             expression = this.expression(0);
@@ -707,28 +785,28 @@ class Parser {
     }
   }
 
-  led(tokenType: TOK, left: unknown): unknown {
-    var right;
+  led(tokenType: TOK, left: Exp): Exp {
+    let right: Exp | null = null;
     switch (tokenType) {
       case TOK.DOT:
         var rbp = bindingPower[TOK.DOT];
         if (this._lookahead(0) !== TOK.STAR) {
           right = this._parseDotRHS(rbp);
-          return { type: "Subexpression", children: [left, right] };
+          return { type: Node.Subexpression, children: [left, right] };
         }
         // Creating a projection.
         this._advance();
         right = this._parseProjectionRHS(rbp);
-        return { type: "ValueProjection", children: [left, right] };
+        return { type: Node.ValueProjection, children: [left, right] };
       case TOK.PIPE:
         right = this.expression(bindingPower[TOK.PIPE]);
-        return { type: TOK.PIPE, children: [left, right] };
+        return { type: Node.OrExpression, children: [left, right] };
       case TOK.OR:
         right = this.expression(bindingPower[TOK.OR]);
-        return { type: "OrExpression", children: [left, right] };
+        return { type: Node.OrExpression, children: [left, right] };
       case TOK.AND:
         right = this.expression(bindingPower[TOK.AND]);
-        return { type: "AndExpression", children: [left, right] };
+        return { type: Node.AndExpression, children: [left, right] };
       case TOK.LPAREN:
         var name = left.name;
         var args = [];
@@ -746,21 +824,21 @@ class Parser {
           args.push(expression);
         }
         this._match(TOK.RPAREN);
-        node = { type: "Function", name: name, children: args };
+        node = { type: Node.Function, name: name, children: args };
         return node;
       case TOK.FILTER:
         var condition = this.expression(0);
         this._match(TOK.RBRACKET);
         if (this._lookahead(0) === TOK.FLATTEN) {
-          right = { type: "Identity" };
+          right = { type: Node.Identity };
         } else {
           right = this._parseProjectionRHS(bindingPower[TOK.FILTER]);
         }
-        return { type: "FilterProjection", children: [left, right, condition] };
+        return { type: Node.FilterProjection, children: [left, right, condition] };
       case TOK.FLATTEN:
-        var leftNode = { type: TOK.FLATTEN, children: [left] };
+        var leftNode: Exp = { type: Node.Flatten, children: [left] };
         var rightNode = this._parseProjectionRHS(bindingPower[TOK.FLATTEN]);
-        return { type: "Projection", children: [leftNode, rightNode] };
+        return { type: Node.Projection, children: [leftNode, rightNode] };
       case TOK.EQ:
       case TOK.NE:
       case TOK.GT:
@@ -777,7 +855,7 @@ class Parser {
         this._match(TOK.STAR);
         this._match(TOK.RBRACKET);
         right = this._parseProjectionRHS(bindingPower[TOK.STAR]);
-        return { type: "Projection", children: [left, right] };
+        return { type: Node.Projection, children: [left, right] };
       default:
         this._errorToken(this._lookaheadToken(0));
     }
@@ -794,7 +872,7 @@ class Parser {
     }
   }
 
-  _errorToken(token: Token): void {
+  _errorToken(token: Token): never {
     var error = new Error("Invalid token (" +
       getTokName(token.type) + "): \"" +
       token.value + "\"");
@@ -803,12 +881,12 @@ class Parser {
   }
 
 
-  _parseIndexExpression() {
+  _parseIndexExpression(): Exp {
     if (this._lookahead(0) === TOK.COLON || this._lookahead(1) === TOK.COLON) {
       return this._parseSliceExpression();
     } else {
-      var node = {
-        type: "Index",
+      var node: Exp = {
+        type: Node.Index,
         value: this._lookaheadToken(0).value
       };
       this._advance();
@@ -817,11 +895,11 @@ class Parser {
     }
   }
 
-  _projectIfSlice(left, right) {
-    var indexExpr = { type: "IndexExpression", children: [left, right] };
-    if (right.type === "Slice") {
+  _projectIfSlice(left: Exp, right: Exp): Exp {
+    const indexExpr: Exp = { type: Node.IndexExpression, children: [left, right] };
+    if (right.type === Node.Slice) {
       return {
-        type: "Projection",
+        type: Node.Projection,
         children: [indexExpr, this._parseProjectionRHS(bindingPower[TOK.STAR])]
       };
     } else {
@@ -829,10 +907,10 @@ class Parser {
     }
   }
 
-  _parseSliceExpression() {
+  _parseSliceExpression(): Exp {
     // [start:end:step] where each part is optional, as well as the last
     // colon.
-    var parts = [null, null, null];
+    var parts: [number | null, number | null, number | null] = [null, null, null];
     var index = 0;
     var currentToken = this._lookahead(0);
     while (currentToken !== TOK.RBRACKET && index < 3) {
@@ -840,12 +918,12 @@ class Parser {
         index++;
         this._advance();
       } else if (currentToken === TOK.NUMBER) {
-        parts[index] = this._lookaheadToken(0).value;
+        parts[index] = this._lookaheadToken(0).value as number;
         this._advance();
       } else {
         var t = this._lookahead(0);
-        var error = new Error("Syntax error, unexpected token: " +
-          t.value + "(" + t.type + ")");
+        const error = new Error("Syntax error, unexpected token: " +
+          getTokName(t));
         error.name = "Parsererror";
         throw error;
       }
@@ -853,17 +931,17 @@ class Parser {
     }
     this._match(TOK.RBRACKET);
     return {
-      type: "Slice",
+      type: Node.Slice,
       children: parts
     };
   }
 
-  _parseComparator(left, comparator) {
+  _parseComparator(left: Exp, comparator: TOK): Exp {
     var right = this.expression(bindingPower[comparator]);
-    return { type: "Comparator", name: comparator, children: [left, right] };
+    return { type: Node.Comparator, name: comparator, children: [left, right] };
   }
 
-  _parseDotRHS(rbp) {
+  _parseDotRHS(rbp: number): Exp {
     var lookahead = this._lookahead(0);
     var exprTokens = [TOK.UNQUOTEDIDENTIFIER, TOK.QUOTEDIDENTIFIER, TOK.STAR];
     if (exprTokens.indexOf(lookahead) >= 0) {
@@ -875,12 +953,13 @@ class Parser {
       this._match(TOK.LBRACE);
       return this._parseMultiselectHash();
     }
+    throw new Error("Syntax error, unexpected token: " + getTokName(lookahead));
   }
 
-  _parseProjectionRHS(rbp) {
-    var right;
+  _parseProjectionRHS(rbp: number): Exp {
+    let right: Exp;
     if (bindingPower[this._lookahead(0)] < 10) {
-      right = { type: "Identity" };
+      right = { type: Node.Identity };
     } else if (this._lookahead(0) === TOK.LBRACKET) {
       right = this.expression(rbp);
     } else if (this._lookahead(0) === TOK.FILTER) {
@@ -898,10 +977,10 @@ class Parser {
     return right;
   }
 
-  _parseMultiselectList() {
-    var expressions = [];
+  _parseMultiselectList(): Exp {
+    const expressions: Exp[] = [];
     while (this._lookahead(0) !== TOK.RBRACKET) {
-      var expression = this.expression(0);
+      let expression = this.expression(0);
       expressions.push(expression);
       if (this._lookahead(0) === TOK.COMMA) {
         this._match(TOK.COMMA);
@@ -911,28 +990,28 @@ class Parser {
       }
     }
     this._match(TOK.RBRACKET);
-    return { type: "MultiSelectList", children: expressions };
+    return { type: Node.MultiSelectList, children: expressions };
   }
 
-  _parseMultiselectHash() {
-    var pairs = [];
+  _parseMultiselectHash(): Exp {
+    var pairs: Exp[] = [];
     var identifierTypes = [TOK.UNQUOTEDIDENTIFIER, TOK.QUOTEDIDENTIFIER];
-    var keyToken, keyName, value, node;
+    let keyToken, keyName, value, node: Exp;
     for (; ;) {
       keyToken = this._lookaheadToken(0);
       if (identifierTypes.indexOf(keyToken.type) < 0) {
         throw new Error("Expecting an identifier token, got: " +
           keyToken.type);
       }
-      keyName = keyToken.value;
+      keyName = (keyToken.value)?.toString() as string;
       this._advance();
       if (this._lookahead(0) !== TOK.COLON) {
-        node = { type: "KeyValuePair", name: keyName, value: { type: "Field", name: keyName } };
+        node = { type: Node.KeyValuePair, name: keyName, value: { type: Node.Field, name: keyName } };
         pairs.push(node);
       } else {
         this._match(TOK.COLON);
         value = this.expression(0);
-        node = { type: "KeyValuePair", name: keyName, value: value };
+        node = { type: Node.KeyValuePair, name: keyName, value: value };
         pairs.push(node);
       }
       if (this._lookahead(0) === TOK.COMMA) {
@@ -942,25 +1021,28 @@ class Parser {
         break;
       }
     }
-    return { type: "MultiSelectHash", children: pairs };
+    return { type: Node.MultiSelectHash, children: pairs };
 
   }
 }
 
 class TreeInterpreter {
-  constructor(runtime) {
+
+  private runtime: Runtime;
+
+  constructor(runtime: Runtime) {
     this.runtime = runtime;
   }
 
 
-  search(node, value) {
+  search(node: Exp, value: unknown): unknown {
     return this.visit(node, value);
   }
 
-  visit(node, value) {
-    var matched, current, result, first, second, field, left, right, collected, i;
+  visit(node: Exp, value: unknown): unknown {
+    var matched, current, result, first, second, field, left, right, collected, i: number;
     switch (node.type) {
-      case "Field":
+      case Node.Field:
         if (value !== null && isObject(value)) {
           field = value[node.name];
           if (field === undefined) {
@@ -970,7 +1052,7 @@ class TreeInterpreter {
           }
         }
         return null;
-      case "Subexpression":
+      case Node.Subexpression:
         result = this.visit(node.children[0], value);
         for (i = 1; i < node.children.length; i++) {
           result = this.visit(node.children[1], result);
@@ -979,11 +1061,11 @@ class TreeInterpreter {
           }
         }
         return result;
-      case "IndexExpression":
+      case Node.IndexExpression:
         left = this.visit(node.children[0], value);
         right = this.visit(node.children[1], left);
         return right;
-      case "Index":
+      case Node.Index:
         if (!isArray(value)) {
           return null;
         }
@@ -996,15 +1078,12 @@ class TreeInterpreter {
           result = null;
         }
         return result;
-      case "Slice":
+      case Node.Slice:
         if (!isArray(value)) {
           return null;
         }
-        var sliceParams = node.children.slice(0);
-        var computed = this.computeSliceParams(value.length, sliceParams);
-        var start = computed[0];
-        var stop = computed[1];
-        var step = computed[2];
+        var sliceParams = node.children.slice(0) as typeof node.children;
+        const [start, stop, step] = this.computeSliceParams(value.length, sliceParams);
         result = [];
         if (step > 0) {
           for (i = start; i < stop; i += step) {
@@ -1016,7 +1095,7 @@ class TreeInterpreter {
           }
         }
         return result;
-      case "Projection":
+      case Node.Projection:
         // Evaluate left child.
         var base = this.visit(node.children[0], value);
         if (!isArray(base)) {
@@ -1030,7 +1109,7 @@ class TreeInterpreter {
           }
         }
         return collected;
-      case "ValueProjection":
+      case Node.ValueProjection:
         // Evaluate left child.
         base = this.visit(node.children[0], value);
         if (!isObject(base)) {
@@ -1045,7 +1124,7 @@ class TreeInterpreter {
           }
         }
         return collected;
-      case "FilterProjection":
+      case Node.FilterProjection:
         base = this.visit(node.children[0], value);
         if (!isArray(base)) {
           return null;
@@ -1065,7 +1144,7 @@ class TreeInterpreter {
           }
         }
         return finalResults;
-      case "Comparator":
+      case Node.Comparator:
         first = this.visit(node.children[0], value);
         second = this.visit(node.children[1], value);
         switch (node.name) {
@@ -1091,7 +1170,7 @@ class TreeInterpreter {
             throw new Error("Unknown comparator: " + node.name);
         }
         return result;
-      case TOK.FLATTEN:
+      case Node.Flatten:
         var original = this.visit(node.children[0], value);
         if (!isArray(original)) {
           return null;
@@ -1106,9 +1185,9 @@ class TreeInterpreter {
           }
         }
         return merged;
-      case "Identity":
+      case Node.Identity:
         return value;
-      case "MultiSelectList":
+      case Node.MultiSelectList:
         if (value === null) {
           return null;
         }
@@ -1117,47 +1196,47 @@ class TreeInterpreter {
           collected.push(this.visit(node.children[i], value));
         }
         return collected;
-      case "MultiSelectHash":
+      case Node.MultiSelectHash: {
         if (value === null) {
           return null;
         }
-        collected = {};
-        var child;
+        const collected: Record<string, unknown> = {};
         for (i = 0; i < node.children.length; i++) {
-          child = node.children[i];
+          let child = node.children[i];
           collected[child.name] = this.visit(child.value, value);
         }
         return collected;
-      case "OrExpression":
+      }
+      case Node.OrExpression:
         matched = this.visit(node.children[0], value);
         if (isFalsy(matched)) {
           matched = this.visit(node.children[1], value);
         }
         return matched;
-      case "AndExpression":
+      case Node.AndExpression:
         first = this.visit(node.children[0], value);
 
         if (isFalsy(first) === true) {
           return first;
         }
         return this.visit(node.children[1], value);
-      case "NotExpression":
+      case Node.NotExpression:
         first = this.visit(node.children[0], value);
         return isFalsy(first);
-      case "Literal":
+      case Node.Literal:
         return node.value;
-      case TOK.PIPE:
+      case Node.Pipe:
         left = this.visit(node.children[0], value);
         return this.visit(node.children[1], left);
-      case TOK.CURRENT:
+      case Node.Current:
         return value;
-      case "Function":
+      case Node.Function:
         var resolvedArgs = [];
         for (i = 0; i < node.children.length; i++) {
           resolvedArgs.push(this.visit(node.children[i], value));
         }
         return this.runtime.callFunction(node.name, resolvedArgs);
-      case "ExpressionReference":
+      case Node.ExpressionReference:
         var refNode = node.children[0];
         // Tag the node with a specific attribute so the type
         // checker verify the type.
@@ -1168,11 +1247,7 @@ class TreeInterpreter {
     }
   }
 
-  computeSliceParams(arrayLength, sliceParams) {
-    var start = sliceParams[0];
-    var stop = sliceParams[1];
-    var step = sliceParams[2];
-    var computed = [null, null, null];
+  computeSliceParams(arrayLength: number, [start, stop, step]: [number | null, number | null, number | null]): [number, number, number] {
     if (step === null) {
       step = 1;
     } else if (step === 0) {
@@ -1193,13 +1268,10 @@ class TreeInterpreter {
     } else {
       stop = this.capSliceRange(arrayLength, stop, step);
     }
-    computed[0] = start;
-    computed[1] = stop;
-    computed[2] = step;
-    return computed;
+    return [start, stop, step];
   }
 
-  capSliceRange(arrayLength, actualValue, step) {
+  capSliceRange(arrayLength: number, actualValue: number, step: number): number {
     if (actualValue < 0) {
       actualValue += arrayLength;
       if (actualValue < 0) {
@@ -1214,7 +1286,8 @@ class TreeInterpreter {
 }
 
 class Runtime {
-  constructor(interpreter) {
+  private _interpreter: TreeInterpreter;
+  constructor(interpreter: TreeInterpreter) {
     this._interpreter = interpreter;
     this.functionTable = {
       // name: [function, <signature>]
@@ -1336,13 +1409,11 @@ class Runtime {
         "takes " + signature.length + pluralized +
         " but received " + args.length);
     }
-    var currentSpec;
-    var actualType;
-    var typeMatched;
+    let typeMatched = false;
     for (var i = 0; i < signature.length; i++) {
       typeMatched = false;
-      currentSpec = signature[i].types;
-      actualType = this._getTypeName(args[i]);
+      let currentSpec = signature[i].types;
+      let actualType = this._getTypeName(args[i]);
       for (var j = 0; j < currentSpec.length; j++) {
         if (this._typeMatches(actualType, currentSpec[j], args[i])) {
           typeMatched = true;
@@ -1351,9 +1422,7 @@ class Runtime {
       }
       if (!typeMatched) {
         var expected = currentSpec
-          .map(function (typeIdentifier) {
-            return TYPE_NAME_TABLE[typeIdentifier];
-          })
+          .map(getTypeName)
           .join(',');
         throw new Error("TypeError: " + name + "() " +
           "expected argument " + (i + 1) +
@@ -1399,7 +1468,7 @@ class Runtime {
       return actual === expected;
     }
   }
-  _getTypeName(obj: unknown): number {
+  _getTypeName(obj: unknown): Type {
     switch (Object.prototype.toString.call(obj)) {
       case "[object String]":
         return Type.STRING;
