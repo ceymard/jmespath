@@ -347,6 +347,7 @@ class Lexer {
       } else if (c === "&") {
         start = this._current;
         this._current++;
+        const c = stream[this._current];
         if (c === "&") {
           this._current++;
           tokens.push({ type: TOK_AND, value: "&&", start: start });
@@ -356,6 +357,7 @@ class Lexer {
       } else if (c === "|") {
         start = this._current;
         this._current++;
+        const c = stream[this._current];
         if (c === "|") {
           this._current++;
           tokens.push({ type: TOK_OR, value: "||", start: start });
@@ -620,7 +622,7 @@ class Parser {
     var right;
     var expression;
     switch (token.type) {
-      case TOK_NUMBER:
+      // case TOK_NUMBER:
       case TOK_LITERAL:
         return { type: "Literal", value: token.value };
       case TOK_UNQUOTEDIDENTIFIER:

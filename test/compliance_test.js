@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import assert from 'assert';
-import { search } from '../jmespath.js';
+import { search } from '../jmespath.ts';
 
 // Compliance tests that aren't supported yet.
 var notImplementedYet = [];

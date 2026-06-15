@@ -41,6 +41,6 @@
     "xpath"
   ],
   "scripts": {
-    "test": "mocha test/"
+    "test": "bun run ./node_modules/.bin/mocha test/"
   }
 }

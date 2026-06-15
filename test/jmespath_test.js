@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { tokenize, compile, strictDeepEqual, search } from '../jmespath.js';
+import { tokenize, compile, strictDeepEqual, search } from '../jmespath.ts';
 
 
 describe('tokenize', function() {
